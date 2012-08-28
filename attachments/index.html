@@ -3,6 +3,8 @@
 <head>
 
 	<script src="jquery.min.js"></script>
+	<script src="jquery.url.js"></script>
+	<script src="/_utils/script/jquery.couch.js?0.11.0"></script>
 
 	<script>
 	(function($) {
@@ -12,33 +14,52 @@
 		//	
 		// Get the attached pages from the document in couchdb
 		//
-		var doc = $.couch.getDoc(url.segment(2))
-		var pages = [] 
-		// Only put files that start with "page" into the pages array
-		$.each(doc._attachments, function (key, value) {
-			if(value.indexOf("page")) {
-				pages.push(value)
-			}
-		} 
+		var doc = $.couch.db(url.segment(1)).openDoc(url.segment(2), {
+              success: function(doc) {
+        		var pages = [] 
+				// Only put files that start with "page" into the pages array
+				$.each(doc._attachments, function (key, value) {
+					if(key.indexOf("images/page") === 0) {
+						pages.push(key)
+					}
+				})
+				pages.sort()
 
-		//
-		// Display the page in the given url
-		//
-		/*
-		var thisPage = 0
-		if(url.param("page")) {
-			thisPage = $.url.param("page")
-		}
-		$(".view").html('<img src="/' + url.attr("path") + '/' + pages[thisPage] + '">')
-		// Set the url for the next page
-		var nextPage = thisPage
-		*/
+				//
+				// Display the page in the given url
+				//
+				var thisPage = 0
+				if(url.param("page")) {
+					thisPage = parseInt(url.param("page"))
+				}
+				$(".view").html('<iframe width="100%" height="100%" src="' + url.attr("directory") + '/' + pages[thisPage] + '">')
 
-		// 
-		// Set up the next and previous URLs
-		//		
-		//$("a:(href:next)").attr("href", $.url.attr("path") + "?page=" + 
 
+
+				// 
+				// Set up the next and previous URLs
+				//		
+
+				// Determine next and previous pages
+				if(thisPage == pages.length) {
+					nextPage = 0
+				}
+				else {
+					nextPage = thisPage + 1
+				}
+
+				if(thisPage == 0) {
+					previousPage = pages.length
+				}
+				else {
+					previousPage = thisPage - 2
+				}
+				// Set the URLs
+				$("a.next").attr("href", url.attr("path") + "?page=" + nextPage)
+				$("a.previous").attr("href", url.attr("path") + "?page=" + previousPage)
+
+			  }
+            })
 	})(jQuery);
 	</script>
 
@@ -63,9 +84,9 @@
 	</div>
 
 	<div class="nav">
-		<a href="#previous"><-- Previous </a>
+		<a class="previous" href="#previous"><-- Previous </a>
 		<span class="nav-spacer"> ~~~ </span> 
-		<a href="#next">Next --></a>	
+		<a class="next" href="#next">Next --></a>	
 	</div>
 
 </body>
