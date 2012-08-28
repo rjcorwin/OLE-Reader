@@ -1,0 +1,73 @@
+<html>
+
+<head>
+
+	<script src="jquery.min.js"></script>
+
+	<script>
+	(function($) {
+
+		var url = $.url()
+		
+		//	
+		// Get the attached pages from the document in couchdb
+		//
+		var doc = $.couch.getDoc(url.segment(2))
+		var pages = [] 
+		// Only put files that start with "page" into the pages array
+		$.each(doc._attachments, function (key, value) {
+			if(value.indexOf("page")) {
+				pages.push(value)
+			}
+		} 
+
+		//
+		// Display the page in the given url
+		//
+		/*
+		var thisPage = 0
+		if(url.param("page")) {
+			thisPage = $.url.param("page")
+		}
+		$(".view").html('<img src="/' + url.attr("path") + '/' + pages[thisPage] + '">')
+		// Set the url for the next page
+		var nextPage = thisPage
+		*/
+
+		// 
+		// Set up the next and previous URLs
+		//		
+		//$("a:(href:next)").attr("href", $.url.attr("path") + "?page=" + 
+
+	})(jQuery);
+	</script>
+
+
+
+	<style>
+
+		/* fix the nav */
+		.nav {
+			position: fixed;
+			bottom: 0px;
+		}
+
+	</style>
+
+
+
+<body>
+
+	<div class="view">
+		Loading...
+	</div>
+
+	<div class="nav">
+		<a href="#previous"><-- Previous </a>
+		<span class="nav-spacer"> ~~~ </span> 
+		<a href="#next">Next --></a>	
+	</div>
+
+</body>
+
+</html>
