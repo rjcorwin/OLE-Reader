@@ -51,6 +51,11 @@
 					thisPage = parseInt(url.param("submit_page")) - 1
 				}
 
+				// @todo Setting width to 100% works fine when the image is less than the 
+				// screen width but will probably mess up your image if it is greater.
+				// In cases where window.width < image.width we'll need to set the viewport
+				// so that it rests with the full image width in view on load.  Haven't
+				// had any luck making this work as of yet using the meta tags.
 				$(".view").hide().html('<img width="100%" src="' + url.attr("directory") + '/' + pages[thisPage] + '">').show("slide", { direction: url.param("slide") }, 500);
 				setTimeout(function() {
 					var newHeight = $(".view img").height()
