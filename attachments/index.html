@@ -8,6 +8,7 @@
 
 	<script src="jquery.min.js"></script>
 	<script src="jquery.url.js"></script>
+	<script src="jquery-ui-1.8.23.custom.min.js"></script>
 	<script src="/_utils/script/jquery.couch.js?0.11.0"></script>	
 	<script>
 	(function($) {
@@ -49,7 +50,12 @@
 				if(url.param("submit_page")) {
 					thisPage = parseInt(url.param("submit_page")) - 1
 				}
-				$(".view").html('<img width="100%" src="' + url.attr("directory") + '/' + pages[thisPage] + '">')
+
+				$(".view").hide().html('<img width="100%" src="' + url.attr("directory") + '/' + pages[thisPage] + '">').show("slide", { direction: url.param("slide") }, 500);
+				setTimeout(function() {
+					var newHeight = $(".view img").height()
+					$(".view").height(newHeight)
+				}, 600)
 
 
 				//
@@ -66,7 +72,9 @@
 						readPage = readPage - doc.start_page
 					}
 				}
+				$('a.page-number').hide()
 				$('a.page-number').html("<div class='page'>page</div>" + readPage)
+				$('a.page-number').fadeIn()
 
 
 				// 
@@ -85,11 +93,26 @@
 					previousPage = pages.length
 				}
 				else {
-					previousPage = thisPage - 2
+					previousPage = thisPage - 1
 				}
 				// Set the URLs
-				$("a.next").attr("href", url.attr("path") + "?page=" + nextPage)
-				$("a.previous").attr("href", url.attr("path") + "?page=" + previousPage)
+				$("a.next").attr("href", url.attr("path") + "?slide=right&page=" + nextPage).click(function() {
+					$(".view img").hide("slide", { direction: "left" }, 250);
+					setTimeout(function(){window.location.assign(url.attr("path") + "?slide=right&page=" + nextPage)},300)
+					return false
+				})
+				$("a.previous").attr("href", url.attr("path") + "?slide=left&page=" + previousPage).click(function() {
+					$(".view img").hide("slide", { direction: "right" }, 250);
+					setTimeout(function(){window.location.assign(url.attr("path") + "?slide=left&page=" + previousPage)},300)
+					return false
+				})
+
+				//
+				// Cache the next and previous page
+				//
+				$(".cache").append('<img width="100%" src="' + url.attr("directory") + '/' + pages[previousPage] + '">');
+				$(".cache").append('<img width="100%" src="' + url.attr("directory") + '/' + pages[nextPage] + '">');
+
 
 			  }
             })
@@ -107,6 +130,10 @@
 
 		body {
 			background: black;
+		}
+
+		.cache {
+			display: none;
 		}
 
 		a:link, a:visited {
@@ -186,14 +213,17 @@
 		}
 
 		.view {
+			background: url(ajax-loader.gif) no-repeat center top;
 			clear: both;
 			padding: 0px;
 			margin:0px;
+			height: 1024px;
 		}
 
 		.loading {
 			font-size: 50px;
-			background: yellow;
+			background: black;
+			color: yellow;
 			margin: 20px;
 		}
 
@@ -230,7 +260,7 @@
 	</form>
 
 	<div class="view" style="">
-		<div class="loading">Loading...</div>
+		<!--div class="loading">Loading...</div -->
 	</div>
 
 	<div class="nav">
@@ -245,6 +275,8 @@
 	</form>
 
 	<a class="to-library" href="#library"><img width="50" src="images/childrens-library-white.png" alt="back to library"> back to my library</a>
+
+	<div class="cache"></div>
 </body>
 
 </html>
