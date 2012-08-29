@@ -103,11 +103,13 @@
 				// Set the URLs
 				$("a.next").attr("href", url.attr("path") + "?slide=right&page=" + nextPage).click(function() {
 					$(".view img").hide("slide", { direction: "left" }, 250);
+					$(".page-number").fadeOut(300)
 					setTimeout(function(){window.location.assign(url.attr("path") + "?slide=right&page=" + nextPage)},300)
 					return false
 				})
 				$("a.previous").attr("href", url.attr("path") + "?slide=left&page=" + previousPage).click(function() {
 					$(".view img").hide("slide", { direction: "right" }, 250);
+					$(".page-number").fadeOut(750)
 					setTimeout(function(){window.location.assign(url.attr("path") + "?slide=left&page=" + previousPage)},300)
 					return false
 				})
