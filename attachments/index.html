@@ -14,20 +14,30 @@
 
 		var url = $.url()
 		
+
 		//	
 		// Get the attached pages from the document in couchdb
 		//
 		var doc = $.couch.db(url.segment(1)).openDoc(url.segment(2), {
               success: function(doc) {
+		$(".page-number").click(function() {
+			$(".go-to").slideDown()
+			return false
+		})
+
+				//
+				// Set the "go to library" URL
+				//
+				$(".to-library").attr('href', "/" + url.segment(1) + "/_design/library/app.html#page-submit-feedback&id=" + url.segment(2))
+
         		var pages = [] 
-				// Only put files that start with "page" into the pages array
+				// Only put files in the pages directory into the pages array
 				$.each(doc._attachments, function (key, value) {
-					if(key.indexOf("pages/page") === 0) {
+					if(key.indexOf("pages/") === 0) {
 						pages.push(key)
 					}
 				})
 				pages.sort()
-
 
 				//
 				// Display the page
@@ -35,6 +45,9 @@
 				var thisPage = 0
 				if(url.param("page")) {
 					thisPage = parseInt(url.param("page"))
+				}
+				if(url.param("submit_page")) {
+					thisPage = parseInt(url.param("submit_page")) - 1
 				}
 				$(".view").html('<img width="100%" src="' + url.attr("directory") + '/' + pages[thisPage] + '">')
 
@@ -184,7 +197,21 @@
 			margin: 20px;
 		}
 
-
+		form.go-to {
+			display: none;
+			float: left;
+			width: 100%;
+		}
+		form.go-to input.input-page {
+			font-size: 50px;
+			width: 80%;
+			float: left;
+		}
+		form.go-to input.submit-page {
+			font-size:50px;
+			width:19%;
+			float: right;
+		}
 	</style>
 
 
@@ -197,6 +224,11 @@
 		<a class="page-number" href="#page-number"></a>
 	</div>
 
+	<form class="go-to" id="go-to" action="index.html" method="get">
+		<input type="text" value="" placeholder="" id="page" name="submit_page" class="input-page">
+		<input type="submit" value="Go" class="submit-page" aria-disabled="false">
+	</form>
+
 	<div class="view" style="">
 		<div class="loading">Loading...</div>
 	</div>
@@ -205,8 +237,13 @@
 		<a class="previous" href="#previous"> < </a>
 		<a class="next" href="#next"> > </a>	
 		<a class="page-number" href="#page-number"></a>
-		
 	</div>
+
+	<form class="go-to" id="go-to" action="index.html" method="get">
+		<input type="text" value="" placeholder="" id="page" name="submit_page" class="input-page">
+		<input type="submit" value="Go" class="submit-page" aria-disabled="false">
+	</form>
+
 	<a class="to-library" href="#library"><img width="50" src="images/childrens-library-white.png" alt="back to library"> back to my library</a>
 </body>
 
