@@ -7,7 +7,7 @@
 		//	
 		// Get the attached pages from the document in couchdb
 		//
-		var doc = $.couch.db(url.segment(1)).openDoc(url.fparam("doc"), {
+		var doc = $.couch.db(url.segment(1)).openDoc(url.param("doc"), {
               success: function(doc) {
 				$(".page-number").click(function() {
 					$(".go-to").slideDown()
@@ -44,7 +44,7 @@
 				// In cases where window.width < image.width we'll need to set the viewport
 				// so that it rests with the full image width in view on load.  Haven't
 				// had any luck making this work as of yet using the meta tags.
-				$(".view").hide().html('<img width="100%" src="' + url.attr("directory") + '/' + pages[thisPage] + '">').show("slide", { direction: url.param("slide") }, 500);
+				$(".view").hide().html('<img width="100%" src="/' + url.segment(1) + '/' + url.param("doc") + '/' + pages[thisPage] + '">').show("slide", { direction: url.param("slide") }, 500);
 				setTimeout(function() {
 					var newHeight = $(".view img").height()
 					$(".view").height(newHeight)
@@ -92,21 +92,21 @@
 				$("a.next").attr("href", url.attr("path") + "?slide=right&page=" + nextPage).click(function() {
 					$(".view img").hide("slide", { direction: "left" }, 250);
 					$(".page-number").fadeOut(300)
-					setTimeout(function(){window.location.assign(url.attr("path") + "?slide=right&page=" + nextPage)},300)
+					setTimeout(function(){window.location.assign(url.attr("path") + "?slide=right&page=" + nextPage + "&doc=" + url.param('doc'))},300)
 					return false
 				})
 				$("a.previous").attr("href", url.attr("path") + "?slide=left&page=" + previousPage).click(function() {
 					$(".view img").hide("slide", { direction: "right" }, 250);
 					$(".page-number").fadeOut(750)
-					setTimeout(function(){window.location.assign(url.attr("path") + "?slide=left&page=" + previousPage)},300)
+					setTimeout(function(){window.location.assign(url.attr("path") + "?slide=left&page=" + previousPage + "&doc=" + url.param('doc'))},300)
 					return false
 				})
 
 				//
 				// Cache the next and previous page
 				//
-				$(".cache").append('<img width="100%" src="' + url.attr("directory") + '/' + pages[previousPage] + '">');
-				$(".cache").append('<img width="100%" src="' + url.attr("directory") + '/' + pages[nextPage] + '">');
+				$(".cache").append('<img width="100%" src="/' + url.segment(1) + '/' + url.param("doc") + '/' + pages[previousPage] + '">');
+				$(".cache").append('<img width="100%" src="/' + url.segment(1) + '/' + url.param("doc") + '/' + pages[nextPage] + '">');
 
 
 			  }

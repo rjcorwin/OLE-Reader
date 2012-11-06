@@ -3,9 +3,14 @@
   ;
 
 ddoc = 
-  { _id:'js-read-book-1'
+  { _id:'_design/ole-reader'
+  , rewrites : 
+    [ {from:"/", to:'index.html'}
+    , {from:"/api", to:'../../'}
+    , {from:"/api/*", to:'../../*'}
+    , {from:"/*", to:'*'}
+    ]
   }
-  ;
 
 couchapp.loadAttachments(ddoc, path.join(__dirname, 'attachments'));
 
