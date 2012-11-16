@@ -9,6 +9,48 @@
 		//
 		var doc = $.couch.db(url.segment(1)).openDoc(url.param("doc"), {
               success: function(doc) {
+
+              	/*
+              	 * Shelf widget
+              	 
+              	$("#other").click(function() {
+              		var manifestText = " 
+						CACHE MANIFEST
+						# 2010-06-18:v3
+
+						# Explicitly cached entries
+						index.html
+						css/style.css
+
+						# offline.html will be displayed if the user is offline
+						FALLBACK:
+						/ /offline.html
+
+						# All other resources (e.g. sites) require the user to be online. 
+						NETWORK:
+						*
+
+						# Additional resources to cache
+						CACHE:
+              			pages/page-14.jpg
+
+
+              		";
+              		var xhr = new XMLHttpRequest()
+					// Notice we're using PUT, not POST.  Also, what we want to name the file is in the URI.
+					xhr.open('PUT', "/fupload/112/hello-world.txt?rev=15-05bbd9cf2a3c17fff5000d4c1e716099", true)
+					xhr.onload = function(response) { 
+					  if(response.status == 200) {
+					  	alert("Your file has been uploaded.")
+					  }
+					}
+					xhr.send(new Blob(['hello world'], {type: 'text/plain'}))
+
+              	})
+				*/
+              	/*
+              	 * Change page widget
+              	 */
 				$(".page-number").click(function() {
 					$(".go-to").slideDown()
 					return false
@@ -17,7 +59,7 @@
 				//
 				// Set the "go to library" URL
 				//
-				$(".to-library").attr('href', "/" + url.segment(1) + "/_design/library/app.html#page-submit-feedback&id=" + url.segment(2))
+				// Dropping for now... $(".to-library").attr('href', "/" + url.segment(1) + "/_design/library/app.html#page-submit-feedback&id=" + url.segment(2))
 
         		var pages = [] 
 				// Only put files in the pages directory into the pages array
