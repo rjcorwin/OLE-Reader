@@ -10,44 +10,36 @@
 		var doc = $.couch.db(url.segment(1)).openDoc(url.param("doc"), {
               success: function(doc) {
 
-              	/*
-              	 * Shelf widget
-              	 
               	$("#other").click(function() {
-              		var manifestText = " 
-						CACHE MANIFEST
-						# 2010-06-18:v3
+	              	var couchdDocURL = db + "/" + doc._id
+	              	// Create the manifest file for caching
+	              	// @todo This won't make sense later when permissions are enforced.
+	              	//       This will need to happen when documents are modified somehow.
 
-						# Explicitly cached entries
-						index.html
-						css/style.css
-
-						# offline.html will be displayed if the user is offline
-						FALLBACK:
-						/ /offline.html
-
-						# All other resources (e.g. sites) require the user to be online. 
-						NETWORK:
-						*
-
-						# Additional resources to cache
-						CACHE:
-              			pages/page-14.jpg
-
-
-              		";
-              		var xhr = new XMLHttpRequest()
-					// Notice we're using PUT, not POST.  Also, what we want to name the file is in the URI.
-					xhr.open('PUT', "/fupload/112/hello-world.txt?rev=15-05bbd9cf2a3c17fff5000d4c1e716099", true)
-					xhr.onload = function(response) { 
+					var manifestArray = ['CACHE MANIFEST',
+					"cache.html", // In case the user hits it later...
+					couchDocURL, // Caches the CouchDB object
+					couchDocURL "/*"].concat(doc._attachments) // everything else
+					var manifestTxt = manifestArray.join("\n")
+	              	var xhr = new XMLHttpRequest()
+					xhr.open('PUT', couchDocURL + "/manifest.appcache?rev=" + doc._rev, true)
+					xhr.onload = function(response) {
 					  if(response.status == 200) {
-					  	alert("Your file has been uploaded.")
+					    // Create the HTML document that will reference the manifest file
+					    var htmlTxt = "<!DOCTYPE html><html manifest='./manifest.appchache'><head><script src='" + db + "/_design/cork/cacheLoading.js'></script></head><body>Loading onto your board..</body</html>"
+		              	var xhr = new XMLHttpRequest()
+						xhr.open('PUT', couchDocURL + "/cache.html?rev=" + response._rev, true)
+						xhr.onload = function(response) {
+						  if(response.status == 200) {
+							window.location("/" + db + "/_design/cork/app.html")						    
+						  }
+						}
+						xhr.send(new Blob([htmlTxt], {type: 'text/cache-manifest'}))
 					  }
 					}
-					xhr.send(new Blob(['hello world'], {type: 'text/plain'}))
+					xhr.send(new Blob([manifestTxt], {type: 'text/cache-manifest'}))
 
-              	})
-				*/
+				})
               	/*
               	 * Change page widget
               	 */
