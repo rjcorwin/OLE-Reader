@@ -49,7 +49,7 @@
       //
       // Cache widget
       //
-      $(".cache-this").click(function() {this.cacheDoc(doc)})
+      $(".cache-this").click(function() {reader.cacheDoc(doc)})
 
       //
       // Change page widget
@@ -120,43 +120,71 @@
       //
       $(".cache").append('<img width="100%" src="/' + $.url().segment(1) + '/' + $.url().param("doc") + '/' + pages[previousPage] + '">');
       $(".cache").append('<img width="100%" src="/' + $.url().segment(1) + '/' + $.url().param("doc") + '/' + pages[nextPage] + '">');
+
     }, // End reader.init()
+
     "cacheDoc": function (doc) {
-      // Create the manifest file for caching
+
+      // Generate the manifest file for caching
       // Making a file cacheable will need to move somewhere else where it makes sense when admin party is off
-      var manifestArray = ['CACHE MANIFEST',
-      "cache.html", // In case the user hits it later...
-      this.docURL, // Caches the CouchDB object
-      this.docURL + "/*"].concat(doc._attachments) // everything else
+      var manifestArray = [
+        'CACHE MANIFEST',
+        "",
+        'CACHE:',
+        "cache.html", // In case the user hits it later...
+        reader.docURL, // Caches the CouchDB object
+        //reader.docURL + "/*" // Catch all
+      ]
+      // add every file in the _attachments
+      $.each(doc._attachments, function(key, value) {
+        if(key != "cache.html" && key != "manifest.appcache"){
+          manifestArray.push(key)
+        }
+      })
+      manifestArray.push('')
+      manifestArray.push('NETWORK:')
+      manifestArray.push('*')
       var manifestTxt = manifestArray.join("\n")
+
+      // Save the manifest file
       var xhr = new XMLHttpRequest()
-      xhr.open('PUT', this.docURL + "/manifest.appcache?rev=" + doc._rev, true)
+      xhr.open('PUT', reader.docURL + "/manifest.appcache?rev=" + doc._rev, true)
       xhr.onload = function(response) {
-        //if(response.status == 200) {
+        var doc = $.parseJSON(response.currentTarget.response)
+        if(response.target.status == 201) { 
+
           // Create the HTML document that will reference the manifest file
-          var htmlTxt = "<!DOCTYPE html><html manifest='./manifest.appchache'><head><script src='" + this.docDb + "/_design/cork/cacheLoading.js'></script></head><body>Loading onto your board..</body</html>"
+          var htmlTxt = "<!DOCTYPE html> <meta content='text/html;charset=utf-8' http-equiv='Content-Type'> <html manifest='manifest.appcache'> <head> <script type='text/javascript' src='/_utils/script/jquery.js'></script> <script type='text/javascript' src='/" + reader.docDb + "/_design/ole-reader/reader.cache.js'> </script> </head> <body><div class='status'>Loading...</div></body>  </html>"
+
+          // Save the HTML document referencing the manifest file
           var xhr = new XMLHttpRequest()
-          xhr.open('PUT', this.docURL + "/cache.html?rev=" + response._rev, true)
+          xhr.open('PUT', reader.docURL + "/cache.html?rev=" + doc.rev, true)
           xhr.onload = function(response) {
-            if(response.status == 200) {
-              // @todo add to localStorage
-              window.location("/" + this.docDb + "/_design/cork/app.html")                
+            if(response.target.status == 201) {
+              // @todo add a reference to this in localStorage so Cork knows
+              window.location = "http://" + window.location.host + reader.docURL + "/cache.html"               
             }
           }
-          xhr.send(new Blob([htmlTxt], {type: 'text/cache-manifest'}))
-        //}
+          xhr.send(new Blob([htmlTxt], {type: 'text/html'}))
+
+        }
       }
       xhr.send(new Blob([manifestTxt], {type: 'text/cache-manifest'}))
+
     } // End cacheDoc
   } // End reader
 
   /*
    * Get this party started
-   */
+   */ 
   $.couch.db(reader.docDb).openDoc(reader.docId, {
     success: function(doc) {
       reader.init(doc)
     }
   })
-  
+/*
+  $.get("/" + reader.docDb + "/" + reader.docId, function(data) { 
+    console.log(data)
+  })
+*/
 })(jQuery);
