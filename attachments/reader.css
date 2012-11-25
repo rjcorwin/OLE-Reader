@@ -64,6 +64,15 @@ a:hover {
 	color: yellow;
 }
 
+.cache-this {
+	width: 30%;
+	float: right;
+	color: white;
+	clear: none;
+	text-align: center;
+	margin: 20px;
+}
+
 .nav a.library {
 	width: 30%;
 	float: right;
