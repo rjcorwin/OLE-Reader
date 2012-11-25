@@ -7,12 +7,9 @@
     "init": function(doc) { 
 
       // 
-      // Configure page variables
+      // Configure pages
       // 
       var pages = [] 
-      var thisPage
-      var nextPage
-      var previousPage
       // Only put files in the pages directory into the pages array
       // to avoid other attachments that are not pages.
       $.each(doc._attachments, function (key, value) {
@@ -21,6 +18,13 @@
         }
       })
       pages.sort()
+
+      // 
+      // Configure page variables
+      // 
+      var thisPage
+      var nextPage
+      var previousPage
       // Determine thisPage
       if($.url().param("page")) {
         thisPage = parseInt($.url().param("page"))
@@ -123,68 +127,75 @@
 
     }, // End reader.init()
 
-    "cacheDoc": function (doc) {
-
-      // Generate the manifest file for caching
-      // Making a file cacheable will need to move somewhere else where it makes sense when admin party is off
-      var manifestArray = [
-        'CACHE MANIFEST',
-        "",
-        'CACHE:',
-        "cache.html", // In case the user hits it later...
-        reader.docURL, // Caches the CouchDB object
-        //reader.docURL + "/*" // Catch all
-      ]
-      // add every file in the _attachments
-      $.each(doc._attachments, function(key, value) {
-        if(key != "cache.html" && key != "manifest.appcache"){
-          manifestArray.push(key)
-        }
-      })
-      manifestArray.push('')
-      manifestArray.push('NETWORK:')
-      manifestArray.push('*')
-      var manifestTxt = manifestArray.join("\n")
-
-      // Save the manifest file
-      var xhr = new XMLHttpRequest()
-      xhr.open('PUT', reader.docURL + "/manifest.appcache?rev=" + doc._rev, true)
-      xhr.onload = function(response) {
-        var doc = $.parseJSON(response.currentTarget.response)
-        if(response.target.status == 201) { 
-
-          // Create the HTML document that will reference the manifest file
-          var htmlTxt = "<!DOCTYPE html> <meta content='text/html;charset=utf-8' http-equiv='Content-Type'> <html manifest='manifest.appcache'> <head> <script type='text/javascript' src='/_utils/script/jquery.js'></script> <script type='text/javascript' src='/" + reader.docDb + "/_design/ole-reader/reader.cache.js'> </script> </head> <body><div class='status'>Loading...</div></body>  </html>"
-
-          // Save the HTML document referencing the manifest file
-          var xhr = new XMLHttpRequest()
-          xhr.open('PUT', reader.docURL + "/cache.html?rev=" + doc.rev, true)
-          xhr.onload = function(response) {
-            if(response.target.status == 201) {
-              // @todo add a reference to this in localStorage so Cork knows
-              window.location = "http://" + window.location.host + reader.docURL + "/cache.html"               
-            }
+    "cacheWorker": function(key) {
+      // @todo
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', reader.docURL + "/" + key, true);
+        xhr.responseType = 'blob';
+        xhr.onload = function(e) {
+          if (this.status == 200) {
+            // Note: .response instead of .responseText
+            var blob = new Blob([this.response], {type: 'image/png'});
+            reader.cacheQueue("workerDone", key, blob)
           }
-          xhr.send(new Blob([htmlTxt], {type: 'text/html'}))
+        };
 
-        }
+        xhr.send();
+    },
+
+    "cacheStatus": function(message) {
+      // @todo update the cache status message
+    },
+
+    "cacheQueue": function(op, data) {
+
+      switch(op) {
+        case "workerDone":
+          count--
+          reader.cacheStatus(count + " files to download")
+
+        case "start":
+          var count = data
+          reader.cacheStatus(count + " files to download")
+
+      } 
+      if(count==0) {
+        // @todo set to localStorage
+        reader.cacheStatus("Done!")
       }
-      xhr.send(new Blob([manifestTxt], {type: 'text/cache-manifest'}))
 
+    },
+
+    "cacheDoc": function (doc) {
+      // start a cache queue
+      reader.cacheQueue("start", Object.keys(doc._attachments))
+      // send each attachment to a worker
+      $.each(doc._attachments, function(key, value) {
+        // @todo queue a worker for each attachment
+      })
     } // End cacheDoc
+  
   } // End reader
 
   /*
    * Get this party started
    */ 
-  $.couch.db(reader.docDb).openDoc(reader.docId, {
-    success: function(doc) {
+
+  if(navigator.onLine) {
+    $.couch.db(reader.docDb).openDoc(reader.docId, {
+      success: function(doc) {
+        reader.init(doc)
+      }
+    })
+  }
+  else {
+    var doc = localStorage.getItem(reader.docId)
+    if(doc) { 
       reader.init(doc)
     }
-  })
-/*
-  $.get("/" + reader.docDb + "/" + reader.docId, function(data) { 
-    console.log(data)
-  })
-*/
+    else {
+      // @todo notify the user they don't have this on their shelf
+    }
+  }
+
 })(jQuery);
