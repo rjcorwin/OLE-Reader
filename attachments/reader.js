@@ -2,8 +2,9 @@
 
   var reader = {
     "docId": $.url().param("doc"),
-    "docURL": "/" + $.url().segment(1) + "/" + $.url().param("doc"),
+    "docURL": $.url().segment(1) + "/" + $.url().param("doc"),
     "docDb": $.url().segment(1),
+    "onLine": true,
     "init": function(doc) { 
 
       // 
@@ -76,11 +77,18 @@
       // In cases where window.width < image.width we'll need to set the viewport
       // so that it rests with the full image width in view on load.  Haven't
       // had any luck making this work as of yet using the meta tags.
+      reader.currentPageId = reader.docURL + "/" + thisPage 
       var slideDirection = $.url().param("slide");
       if (slideDirection == null) {
         slideDirection = "right"
       }
-      $(".view").hide().html('<img width="100%" src="/' + $.url().segment(1) + '/' + $.url().param("doc") + '/' + pages[thisPage] + '">').show("slide", { direction: slideDirection }, 500);
+      if (reader.onLine) {
+        reader.currentPageSrc = reader.currentPageId 
+      }
+      else {
+        reader.currentPageSrc = localStorage.getItem(reader.currentPageId).src
+      }
+      $(".view").hide().html('<img width="100%" src="/' + reader.currentPageSrc + '">').show("slide", { direction: slideDirection }, 500)
       setTimeout(function() {
         var newHeight = $(".view img").height()
         $(".view").height(newHeight)
@@ -176,26 +184,5 @@
     } // End cacheDoc
   
   } // End reader
-
-  /*
-   * Get this party started
-   */ 
-
-  if(navigator.onLine) {
-    $.couch.db(reader.docDb).openDoc(reader.docId, {
-      success: function(doc) {
-        reader.init(doc)
-      }
-    })
-  }
-  else {
-    var doc = localStorage.getItem(reader.docId)
-    if(doc) { 
-      reader.init(doc)
-    }
-    else {
-      // @todo notify the user they don't have this on their shelf
-    }
-  }
 
 })(jQuery);
