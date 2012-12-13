@@ -1,3 +1,4 @@
+// test: http://127.0.0.1:5984/library-dev/_design/bell-reader/app.html?doc=english--1--book-kevins-birthday
 (function($) {
 
   var reader = {
@@ -77,7 +78,7 @@
       // In cases where window.width < image.width we'll need to set the viewport
       // so that it rests with the full image width in view on load.  Haven't
       // had any luck making this work as of yet using the meta tags.
-      reader.currentPageId = reader.docURL + "/" + thisPage 
+      reader.currentPageId = reader.docURL + "/" + pages[thisPage] 
       var slideDirection = $.url().param("slide");
       if (slideDirection == null) {
         slideDirection = "right"
@@ -134,17 +135,27 @@
       $(".cache").append('<img width="100%" src="/' + $.url().segment(1) + '/' + $.url().param("doc") + '/' + pages[nextPage] + '">');
 
     }, // End reader.init()
-
+    "cacheData": {
+      "queue": {},
+      "progressPercent": function() {
+        // @todo
+      }
+    },
+    "cacheCount": 0,
     "cacheWorker": function(key) {
       // @todo
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', reader.docURL + "/" + key, true);
+        xhr.readerTarget = "/" + this.docURL + "/" + key
+        xhr.open('GET', "/" + this.docURL + "/" + key, true);
         xhr.responseType = 'blob';
         xhr.onload = function(e) {
           if (this.status == 200) {
             // Note: .response instead of .responseText
-            var blob = new Blob([this.response], {type: 'image/png'});
-            reader.cacheQueue("workerDone", key, blob)
+            // @todo detect filetype
+            var type = 'image/png'
+            var blob = new Blob([this.response], {type: type});
+            localStorage.setItem(this.readerTarget, blob)
+            reader.cacheQueue("workerDone", this.readerTarget, blob)
           }
         };
 
@@ -153,36 +164,60 @@
 
     "cacheStatus": function(message) {
       // @todo update the cache status message
+      console.log(message)
     },
 
     "cacheQueue": function(op, data) {
 
       switch(op) {
         case "workerDone":
-          count--
-          reader.cacheStatus(count + " files to download")
+          this.cacheCount--
+          this.cacheStatus(this.cacheCount + " files to download")
+          break;
 
         case "start":
-          var count = data
-          reader.cacheStatus(count + " files to download")
-
+          this.cacheCount = data.length
+          this.cacheStatus(this.cacheCount + " files to download")
+          break;
       } 
-      if(count==0) {
+      if(this.cacheCount==0) {
         // @todo set to localStorage
-        reader.cacheStatus("Done!")
+        localStorage.setItem(this.docURL, true)
+        this.cacheStatus("Done!")
       }
 
     },
 
     "cacheDoc": function (doc) {
       // start a cache queue
-      reader.cacheQueue("start", Object.keys(doc._attachments))
+      this.cacheQueue("start", Object.keys(doc._attachments))
       // send each attachment to a worker
       $.each(doc._attachments, function(key, value) {
-        // @todo queue a worker for each attachment
+        reader.cacheWorker(key)
       })
     } // End cacheDoc
   
   } // End reader
 
+  /*
+   * Get this party started
+   */ 
+
+  if(navigator.onLine) {
+    $.couch.db(reader.docDb).openDoc(reader.docId, {
+      success: function(doc) {
+        reader.init(doc)
+      }
+    })
+  }
+  else {
+    reader.onLine = false
+    var doc = localStorage.getItem(reader.docURL)
+    if(doc) { 
+      reader.init(doc)
+    }
+    else {
+      // @todo notify the user they don't have this on their shelf
+    }
+  }
 })(jQuery);
