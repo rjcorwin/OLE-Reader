@@ -1,5 +1,6 @@
 // test: http://127.0.0.1:5984/library-dev/_design/bell-reader/app.html?doc=english--1--book-kevins-birthday
-(function($) {
+jQuery(document).ready(function($) {
+ 
 
   var reader = {
     "docId": $.url().param("doc"),
@@ -93,9 +94,9 @@
       }
       // Insert the page
       var pageHTML = '<img width="100%" src="' + reader.currentPageSrc + '" />'
-      alert(pageHTML)
-      //$(".view").hide().html(pageHTML).show("slide", { direction: slideDirection }, 500)
-      $(".view").html("<div style='color:#FFF'>anything</div>")
+      //alert(pageHTML)
+      $(".view").hide().html(pageHTML).show("slide", { direction: slideDirection }, 500)
+      //$(".view").html("<div style='color:#FFF'>anything</div>")
       //$("body").html(this.readerPageSrc)
       setTimeout(function() {
         var newHeight = $(".view img").height()
@@ -251,4 +252,5 @@
       // @todo notify the user they don't have this on their shelf
     }
   }
-})(jQuery);
+
+});
