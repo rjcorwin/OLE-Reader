@@ -78,18 +78,25 @@
       // In cases where window.width < image.width we'll need to set the viewport
       // so that it rests with the full image width in view on load.  Haven't
       // had any luck making this work as of yet using the meta tags.
+      $(".view").html("<div style='color:#FFF'>anything</div>")
       reader.currentPageId = reader.docURL + "/" + pages[thisPage] 
       var slideDirection = $.url().param("slide");
       if (slideDirection == null) {
         slideDirection = "right"
       }
       if (reader.onLine) {
-        reader.currentPageSrc = reader.currentPageId 
+        reader.currentPageSrc = "/" + reader.currentPageId 
       }
       else {
-        reader.currentPageSrc = localStorage.getItem(reader.currentPageId).src
+        reader.currentPageSrc = localStorage.getItem("/" + reader.currentPageId)
+        reader.currentPageSrc =  "data:image/png" + reader.currentPageSrc.substr(15, reader.currentPageSrc.length)
       }
-      $(".view").hide().html('<img width="100%" src="/' + reader.currentPageSrc + '">').show("slide", { direction: slideDirection }, 500)
+      // Insert the page
+      var pageHTML = '<img width="100%" src="' + reader.currentPageSrc + '" />'
+      alert(pageHTML)
+      //$(".view").hide().html(pageHTML).show("slide", { direction: slideDirection }, 500)
+      $(".view").html("<div style='color:#FFF'>anything</div>")
+      //$("body").html(this.readerPageSrc)
       setTimeout(function() {
         var newHeight = $(".view img").height()
         $(".view").height(newHeight)
@@ -142,8 +149,9 @@
       }
     },
     "cacheCount": 0,
-    "cacheWorker": function(key) {
+    "cacheWorker": function() {
       // @todo
+        var key = this.cacheKeys.pop()
         var xhr = new XMLHttpRequest();
         xhr.readerTarget = "/" + this.docURL + "/" + key
         xhr.open('GET', "/" + this.docURL + "/" + key, true);
@@ -153,9 +161,23 @@
             // Note: .response instead of .responseText
             // @todo detect filetype
             var type = 'image/png'
-            var blob = new Blob([this.response], {type: type});
-            localStorage.setItem(this.readerTarget, blob)
-            reader.cacheQueue("workerDone", this.readerTarget, blob)
+            //var blob = new Blob([this.response], {type: type});
+            var blob = this.response;
+            //var srcBlobURL = window.URL.createObjectURL(blob)
+            //var srcBase64 = 'data:image/png;base64,' + window.btoa(blob)
+            var freader = new FileReader();
+            freader.onload = function(event){
+                //createImage(event.target.result); //event.target.results contains the base64 code to create the image.
+                //$(".view").append('<img width="100%" src="' + event.target.result + '" />')
+                //localStorage.setItem(this.readerTarget, 'data:image/png;base64,' + window.btoa(blob))
+                localStorage.setItem(this.readerTarget, event.target.result)
+                reader.cacheQueue("workerDone", reader.readerTarget, blob)
+            };
+            freader.readerTarget = this.readerTarget
+            freader.readAsDataURL(blob)
+            //$(".view").append('<img width="100%" src="' + srcBlobURL + '" />')
+            //localStorage.setItem(this.readerTarget, 'data:image/png;base64,' + window.btoa(blob))
+            //reader.cacheQueue("workerDone", this.readerTarget, blob)
           }
         };
 
@@ -166,6 +188,7 @@
       // @todo update the cache status message
       console.log(message)
     },
+    "cacheKeys": {},
 
     "cacheQueue": function(op, data) {
 
@@ -173,28 +196,35 @@
         case "workerDone":
           this.cacheCount--
           this.cacheStatus(this.cacheCount + " files to download")
+          if(this.cacheCount==0) {
+            // @todo set to localStorage
+            var doc = JSON.parse(localStorage.getItem(this.docURL))
+            doc.cached = true
+            localStorage.setItem(this.docURL, JSON.stringify(doc))
+            this.cacheStatus("Done!")
+          }
+          else {
+            this.cacheWorker()
+          }
           break;
 
         case "start":
-          this.cacheCount = data.length
+          this.cacheCount = this.cacheKeys.length
           this.cacheStatus(this.cacheCount + " files to download")
+          // start the bubble
+          this.cacheWorker()
           break;
       } 
-      if(this.cacheCount==0) {
-        // @todo set to localStorage
-        localStorage.setItem(this.docURL, true)
-        this.cacheStatus("Done!")
-      }
+
 
     },
 
     "cacheDoc": function (doc) {
+      // cache this document object
+      localStorage.setItem(reader.docURL, JSON.stringify(doc))
+      this.cacheKeys = Object.keys(doc._attachments)
       // start a cache queue
-      this.cacheQueue("start", Object.keys(doc._attachments))
-      // send each attachment to a worker
-      $.each(doc._attachments, function(key, value) {
-        reader.cacheWorker(key)
-      })
+      this.cacheQueue("start")
     } // End cacheDoc
   
   } // End reader
@@ -203,7 +233,7 @@
    * Get this party started
    */ 
 
-  if(navigator.onLine) {
+  if(navigator.onLine == false) {
     $.couch.db(reader.docDb).openDoc(reader.docId, {
       success: function(doc) {
         reader.init(doc)
@@ -211,8 +241,9 @@
     })
   }
   else {
+    console.log("offline")
     reader.onLine = false
-    var doc = localStorage.getItem(reader.docURL)
+    var doc = JSON.parse(localStorage.getItem(reader.docURL))
     if(doc) { 
       reader.init(doc)
     }
