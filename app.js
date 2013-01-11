@@ -3,7 +3,7 @@
   ;
 
 ddoc = 
-  { _id:'_design/ole-reader'
+  { _id:'_design/bell-reader'
   , rewrites : 
     [ {from:"/", to:'index.html'}
     , {from:"/api", to:'../../'}
