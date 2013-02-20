@@ -1,6 +1,31 @@
+/*
+ * @todo Refactor this.  It only needs couchdb for saving audio.
+ * @todo Finish the ugly UI.
+ */
+
 	(function($) {
 
 		var url = $.url()
+
+		if ($url.param("record") == true) {
+		  $(".record").html('<button onclick="startRecording(this);">record</button>  <button onclick="stopRecording(this);" disabled>stop</button>  <h2>Recordings</h2>  <ul id="recordingslist"></ul>  <h2>Log</h2>  <pre id="log"></pre>')
+		}
+		try {
+	      // webkit shim
+	      window.AudioContext = window.AudioContext || window.webkitAudioContext;
+	      navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia;
+	      window.URL = window.URL || window.webkitURL;
+	      
+	      audio_context = new AudioContext;
+	      __log('Audio context set up.');
+	      __log('navigator.getUserMedia ' + (navigator.getUserMedia ? 'available.' : 'not present!'));
+	    } catch (e) {
+	      //alert('No web audio support in this browser!');
+	    }
+	    
+	    navigator.getUserMedia({audio: true}, startUserMedia, function(e) {
+	      __log('No live audio input: ' + e);
+	    });
 		
 		// @todo If there is not doc defined, show a dialog for giving us a doc ID.
 
@@ -28,6 +53,15 @@
 				})
 				pages.sort()
 
+				var audio = [] 
+				// Only put files in the pages directory into the pages array
+				$.each(doc._attachments, function (key, value) {
+					if(key.indexOf("audio/") === 0) {
+						audio.push(key)
+					}
+				})
+				audio.sort()
+
 				//
 				// Display the page
 				//
@@ -38,6 +72,16 @@
 				if(url.param("submit_page")) {
 					thisPage = parseInt(url.param("submit_page")) - 1
 				}
+
+				// 
+				// Set the audio recording
+				// 
+
+				$(".audio").html('<audio controls>	<source src="/' + url.segment(1) + '/' + url.param("doc") + '/audio/' + thisPage + '.wav">	</audio>')//  + url.segment(1) + '/' + url.param("doc") + '/' + audio[thisPage] + '">' + ".wav")
+
+				//
+				// Set the page image
+				//
 
 				// @todo Setting width to 100% works fine when the image is less than the 
 				// screen width but will probably mess up your image if it is greater.
